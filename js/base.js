@@ -6,8 +6,8 @@
   };
 
 
-  // window.serviceUrl = 'http://118.24.49.106:5000' //prod
-  window.serviceUrl = 'http://localhost:5000' //dev
+  window.serviceUrl = 'http://118.24.49.106:5001' //prod
+  // window.serviceUrl = 'http://localhost:5000' //dev
 
   this.page_interval = 8;
 }).call(this);
