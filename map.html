@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <style type="text/css">
+    body,
+    html {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      font-family: "微软雅黑";
+    }
+
+    #allmap {
+      width: 100%;
+      height: 100vh;
+    }
+
+    p {
+      margin-left: 5px;
+      font-size: 14px;
+    }
+
+    .btn {
+      width: 90%;
+      margin-right: 10%;
+      margin-bottom: 20px;
+    }
+
+    .alert-primary {
+      color: #326eaf !important;
+      background-color: rgba(204, 229, 255, 0) !important;
+      border-color: rgba(204, 229, 255, 0) !important;
+      width: 100%;
+    }
+
+    i {
+      margin-right: 10px;
+    }
+  </style>
+
+  <link href="http://api.map.baidu.com/library/TrafficControl/1.4/src/TrafficControl_min.css" rel="stylesheet" type="text/css"/>
+  <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=mwzogZZGptZWIaKK32eOeydWTPDmdASl"></script>
+  <script type="text/javascript" src="http://api.map.baidu.com/library/TrafficControl/1.4/src/TrafficControl_min.js"></script>
+  <script type="text/javascript" src="http://api.map.baidu.com/library/SearchInfoWindow/1.5/src/SearchInfoWindow_min.js"></script>
+  <link rel="stylesheet" href="http://api.map.baidu.com/library/SearchInfoWindow/1.5/src/SearchInfoWindow_min.css" />
+  <script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+  <script src="js/base.js"></script>
+
+
+  <title></title>
+</head>
+
+<body>
+
+  <div id="allmap" style="margin-top:0px"></div>
+
+</body>
+</html>
+
+<script src="https://cdn.bootcss.com/vue/2.5.16/vue.min.js"></script>
+<script src="https://cdn.bootcss.com/vue-resource/1.5.1/vue-resource.min.js"></script>
+<script type="text/javascript">
+
+ window.vueapp = new Vue({
+            el: "#allmap",
+            data: {
+              item:{title:"", desc:"", url:""},
+              list:[],
+              currentPage: 0,
+              pages: 0,
+              limit: 10,
+              id: "",
+              menuList:[],
+              latitude : '',
+              longitude : '',
+              currentLocationDesc:''
+            },
+            computed:{
+              showMore: function(){
+                return this.currentPage < this.pages
+              }
+            },
+            methods: {
+              more: function(){
+                this.currentPage++;
+                this.getList()
+              },
+              detail: function(merchant){
+                window.location.href = 'map.html?id='+merchant._id
+              },
+              getInfo: function(){
+                var self = this
+                var submitData = {"id": self.id}
+
+                //banner
+                Vue.http.post(window.serviceUrl + '/merchant/findOne', submitData)
+                    .then(function (res) {
+                        console.log('------------merchant FindOne------------------')
+                        console.log(res);
+                        if (res.body.error_code == 0) {
+                          self.item = res.body.item
+                          self.addMap()
+                        } else {
+
+                        }
+                    }, function (res) {
+                        alert('系统发生未知错误,请联系我们')
+                  });
+
+              },
+
+              addMap: function(){
+                    //Map default setting, default location = lasa
+                    var map = new BMap.Map("allmap");
+
+                    //Trafic layer
+                    var ctrl = new BMapLib.TrafficControl({
+                      showPanel: false //是否显示路况提示面板
+                    });
+                    map.addControl(ctrl);
+                    ctrl.setAnchor(BMAP_ANCHOR_BOTTOM_RIGHT);
+
+                    //Navigator
+                    var top_left_control = new BMap.ScaleControl({
+                      anchor: BMAP_ANCHOR_TOP_LEFT
+                    }); // 左上角，添加比例尺
+                    var top_left_navigation = new BMap.NavigationControl({
+                      anchor: BMAP_ANCHOR_TOP_LEFT
+                    }); //左上角，添加默认缩放平移控件
+                    map.addControl(top_left_control);
+                    map.addControl(top_left_navigation);
+
+                    //
+                    var geolocationControl = new BMap.GeolocationControl();
+                    map.addControl(geolocationControl);
+
+                    var poi = new BMap.Point(this.item.location.coordinates[0], this.item.location.coordinates[1]);
+                    map.centerAndZoom(poi, 16);
+                    map.enableScrollWheelZoom();
+
+                    var content = '<br/>地址：' +  this.item.location_desc + '<br/>联系电话：' + this.item.tel
+
+                    //创建检索信息窗口对象
+                    var searchInfoWindow = null;
+                    var searchInfoWindow = new BMapLib.SearchInfoWindow(map, content, {
+                      title: this.item.title, //标题
+                      panel : "panel", //检索结果面板
+                      enableAutoPan : true, //自动平移
+                      searchTypes :[
+                        BMAPLIB_TAB_FROM_HERE, //从这里出发
+                        BMAPLIB_TAB_SEARCH   //周边检索
+                      ]
+                    });
+
+                    var marker = new BMap.Marker(poi); //创建marker对象
+                    marker.enableDragging(); //marker可拖拽
+                    map.addOverlay(marker); //在地图中添加marker
+                    searchInfoWindow.open(marker);
+              },
+
+              getMenu: function(sectionId){
+									var self = this
+
+									//banner
+									Vue.http.post(window.serviceUrl + '/menu/list', {})
+											.then(function (res) {
+													console.log('------------menu list------------------')
+													console.log(res);
+													if (res.body.error_code == 0) {
+														self.menuList = res.body.items
+													} else {
+														alert('系统发生未知错误,请联系我们')
+													}
+											}, function (res) {
+													alert('系统发生未知错误,请联系我们')
+										});
+
+								},
+
+            },
+            mounted: function() {
+              var self = this
+              self.id = Utility.getURLParameter('id');
+              if(!self.id){
+                alert('参数错误!');
+                return
+              }
+              self.getInfo()
+            }
+        });
+
+
+
+
+
+</script>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title></title>
+	<meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no,minimal-ui,viewport-fit=cover"/>
+	<meta name="format-detection" content="telephone=no,address=no" />
+	<meta name="referrer" content="always" />
+	<meta name="apple-mobile-web-app-capable" content="no" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="no" />
+
+  <script src="js/base.js"></script>
+	<script src="http://cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="css/ui.css" />
+	<link rel="stylesheet" type="text/css" href="css/header.css" />
+	<link href="https://cdn.bootcss.com/weui/1.1.2/style/weui.css" rel="stylesheet">
+  <link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.css" rel="stylesheet">
+  <link href="https://cdn.bootcss.com/element-ui/2.4.0/theme-chalk/index.css" rel="stylesheet">
+  <link href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+	<style>
+		.page__hd {
+			padding: 15px 20px;
+		}
+		.page__title {
+			text-align: left;
+			font-size: 20px;
+			font-weight: 500;
+		}
+    .page__desc {
+        margin-top: 5px;
+        color: #888;
+        text-align: left;
+        font-size: 14px;
+    }
+		.weui-grid__icon {
+			width: 30px;
+			height: 30px;
+			margin: 0 auto;
+    }
+    .weui-media-box__desc {
+    color: #999999;
+    font-size: 12px;
+}
+.weui-media-box_appmsg .weui-media-box__thumb {
+    vertical-align: middle;
+}
+
+i{
+  margin-right:5px
+}
+	</style>
+</head>
+
+<body>
+    <div  id="vueapp">
+        
+        <header class="head2home">
+            <el-dropdown  style="width: 50px; height: 50px;">
+                <div class="el-dropdown-link" style="width: 50px; height: 50px;">
+                        <img src="img/home.png" alt="" class="src" style="width: 30px; height: 30px; margin: 10px;">
+                </div>
+
+                <el-dropdown-menu slot="dropdown">
+                    <el-dropdown-item v-for="menu in menuList"><a :href="menu.url">{{menu.title}}</a></el-dropdown-item>
+                </el-dropdown-menu>
+            </el-dropdown>
+        </header>
+
+        <div>
+            <img src="img/park.jpg" alt="" width="100%">
+        </div> 
+
+        <div class="page__hd">
+            <h1 class="page__title">附近停车场</h1>
+            <p class="page__desc"><i class="fa fa-map-marker" aria-hidden="true"></i>当前位置: {{currentLocationDesc}}</p>
+        </div>
+
+        <div class="weui-panel weui-panel_access">
+            <!-- <div class="weui-panel__hd">图文组合列表</div> -->
+            <div class="weui-panel__bd">
+                <a @click="detail(merchant)" class="weui-media-box weui-media-box_appmsg" v-for="merchant in list">
+                    <div class="weui-media-box__hd">
+                        <img class="weui-media-box__thumb" :src="merchant.image" alt="">
+                    </div>
+                    <div class="weui-media-box__bd">
+                        <h4 class="weui-media-box__title">{{merchant.title}}</h4>
+                        <p class="weui-media-box__desc"><i class="fa fa-map-marker" aria-hidden="true"></i>{{"距离当前位置约500米"}}</p>
+                    </div>
+                    <div class="weui-media-box__hd" style="width: 30px">
+                        <img class="weui-media-box__thumb" src="img/waypoint.png" alt="">
+                    </div>
+                </a>
+            </div>
+            <div class="weui-panel__ft" v-show="showMore" @click="more()" >
+                <a href="javascript:void(0);" class="weui-cell weui-cell_access weui-cell_link">
+                    <div class="weui-cell__bd" style="text-align: center">查看更多</div>
+                </a>    
+            </div>
+        </div>
+	
+
+	</div>
+
+	<script src="https://cdn.bootcss.com/vue/2.5.16/vue.min.js"></script>
+  <script src="https://cdn.bootcss.com/vue-resource/1.5.1/vue-resource.min.js"></script>
+  <script src="https://cdn.bootcss.com/element-ui/2.4.0/index.js"></script>
+  <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=mwzogZZGptZWIaKK32eOeydWTPDmdASl"></script>
+
+	<script type="text/javascript">
+    window.vueapp = new Vue({
+            el: "#vueapp",
+            data: {
+              item:{title:"", desc:"", url:""},
+              list:[],
+              currentPage: 0,
+              pages: 0,
+              limit: 10,
+              id: "",
+              menuList:[],
+              latitude : '',
+              longitude : '',
+              currentLocationDesc:''
+            },
+            computed:{
+              showMore: function(){
+                return this.currentPage < this.pages
+              }
+            },
+            methods: {
+              more: function(){
+                this.currentPage++;
+                this.getList()
+              },
+              detail: function(merchant){
+                window.location.href = 'map.html?id='+merchant._id
+              },
+
+              getList: function(){
+                var self = this
+                var submitData = {
+                  "type": 'FOOD', 
+                  "page":self.currentPage, 
+                  "limit": self.limit,
+                  "longtitude": self.longitude,
+                  "latitude": self.latitude
+                }
+
+                //banner
+                Vue.http.post(window.serviceUrl + '/merchant/nearby', submitData)
+                    .then(function (res) {
+                         console.log('------------merchant List-----------------')
+                        console.log(res);
+                        if (res.body.error_code == 0) {
+                          self.list = self.list.concat(res.body.items)
+                          self.currentPage = res.body.page
+                          self.pages = res.body.pages
+                        } else {
+
+                        }
+                    }, function (res) {
+                        alert('系统发生未知错误,请联系我们')
+                  });
+              },
+
+              getMenu: function(sectionId){
+									var self = this
+
+									//banner
+									Vue.http.post(window.serviceUrl + '/menu/list', {})
+											.then(function (res) {
+													console.log('------------menu list------------------')
+													console.log(res);
+													if (res.body.error_code == 0) {
+														self.menuList = res.body.items
+													} else {
+														alert('系统发生未知错误,请联系我们')
+													}
+											}, function (res) {
+													alert('系统发生未知错误,请联系我们')
+										});
+
+								},
+
+            },
+            mounted: function() {
+              var self = this
+              if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position){
+                    console.log('------------Current Position------------------')
+                    console.log(position);
+                    var ggPoint = new BMap.Point(position.coords.longitude,position.coords.latitude);
+                    var convertor = new BMap.Convertor();
+                    var pointArr = [];
+                    pointArr.push(ggPoint);
+                    convertor.translate(pointArr, 1, 5, function(data){
+                      console.log('------------Current BaiDu Position------------------')
+                      console.log(data.points[0]);
+                      self.latitude = data.points[0].lat;
+                      self.longitude = data.points[0].lng;
+                      self.getList()
+
+                      var geoc = new BMap.Geocoder(); 
+                      geoc.getLocation(data.points[0], function(rs){
+                      var addComp = rs.addressComponents;
+                      self.currentLocationDesc = addComp.province + addComp.city  + addComp.district  + addComp.street + addComp.streetNumber+'号';
+
+                    })
+                  })
+                },function(err){
+                  console.log('------------Position Error------------------')
+                  console.log(err);
+                  alert(err);
+                });
+              } else {
+                alert('您的浏览器不支持地理位置信息');
+              } 
+            }
+        });
+	</script>
+
+
+
+</body>
+
+</html>
