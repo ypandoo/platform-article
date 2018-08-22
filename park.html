@@ -13,7 +13,6 @@
   <script src="js/base.js"></script>
 	<script src="http://cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
 
-	<link rel="stylesheet" type="text/css" href="css/ui.css" />
 	<link rel="stylesheet" type="text/css" href="css/header.css" />
 	<link href="https://cdn.bootcss.com/weui/1.1.2/style/weui.css" rel="stylesheet">
   <link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.css" rel="stylesheet">
@@ -51,11 +50,36 @@
 i{
   margin-right:5px
 }
+
+.el-dialog {
+    width: 80vw;
+}
+
+.el-dialog__body {
+    padding: 10px 20px;
+}
+
 	</style>
 </head>
 
 <body>
     <div  id="vueapp">
+
+        <el-dialog :title="currentMerchant.title" :visible.sync="dialogMerchant" >
+            <el-carousel :interval="4000" height="200px" indicator-position="outside" arrow="always">
+                <el-carousel-item v-for="(image,index) in currentMerchant.image_list" :key="index">
+                  <img :src="image" alt="" height="200px" width="100%"> 
+                </el-carousel-item>
+              </el-carousel>
+              <p style="font-weight: 600;font-size: 15px;margin: 5px 0;">
+                商户简介:
+              </p>
+              <p style="font-size: 12px;margin: 10px 0 20px 0;">
+                {{currentMerchant.desc}}
+              </p>
+              <el-button type="primary"  @click="detail(currentMerchant)" style="width: 100%; margin-bottom: 10px">路线导航</el-button>
+              <a :href="'tel:'+currentMerchant.tel"><el-button type="warning"  style="width: 100%; margin-bottom: 10px">电话咨询</el-button></a>
+        </el-dialog>
         
         <header class="head2home">
             <el-dropdown  style="width: 50px; height: 50px;">
@@ -81,15 +105,15 @@ i{
         <div class="weui-panel weui-panel_access">
             <!-- <div class="weui-panel__hd">图文组合列表</div> -->
             <div class="weui-panel__bd">
-                <a @click="detail(merchant)" class="weui-media-box weui-media-box_appmsg" v-for="merchant in list">
+                <a class="weui-media-box weui-media-box_appmsg" v-for="merchant in list">
                     <div class="weui-media-box__hd">
                         <img class="weui-media-box__thumb" :src="merchant.image" alt="">
                     </div>
-                    <div class="weui-media-box__bd">
+                    <div class="weui-media-box__bd" @click="showCurrent(merchant)">
                         <h4 class="weui-media-box__title">{{merchant.title}}</h4>
                         <p class="weui-media-box__desc"><i class="fa fa-map-marker" aria-hidden="true"></i>{{"距离当前位置约500米"}}</p>
                     </div>
-                    <div class="weui-media-box__hd" style="width: 30px">
+                    <div class="weui-media-box__hd" style="width: 30px" @click="detail(merchant)">
                         <img class="weui-media-box__thumb" src="img/waypoint.png" alt="">
                     </div>
                 </a>
@@ -122,7 +146,9 @@ i{
               menuList:[],
               latitude : '',
               longitude : '',
-              currentLocationDesc:''
+              currentLocationDesc:'',
+              dialogMerchant: false,
+              currentMerchant:{}
             },
             computed:{
               showMore: function(){
@@ -136,6 +162,11 @@ i{
               },
               detail: function(merchant){
                 window.location.href = 'map.html?id='+merchant._id
+              },
+
+              showCurrent: function(merchant){
+                this.currentMerchant = merchant
+                this.dialogMerchant = true
               },
 
               getList: function(){
@@ -187,6 +218,7 @@ i{
             },
             mounted: function() {
               var self = this
+              this.getMenu()
               if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position){
                     console.log('------------Current Position------------------')
